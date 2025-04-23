@@ -1,4 +1,4 @@
-package com.unasp.mentelivreapp.ui.theme
+package com.example.safelife.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

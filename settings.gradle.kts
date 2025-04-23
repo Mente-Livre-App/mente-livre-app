@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MenteLivreApp"
+rootProject.name = "SafeLife"
 include(":app")
  
