@@ -31,5 +31,21 @@ fun PostDetailScreen(
                 }
             }
         }
+        // Observa a lista de comentários
+        val comments by viewModel.comments.collectAsState()
+        Text(
+            text = "Comentários (${comments.size})",
+            style = MaterialTheme.typography.titleSmall
+        )
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(comments) { comment ->
+                // Composable separado para cada comentário
+                CommentItem(comment)
+            }
+        }
+
     }
 }
