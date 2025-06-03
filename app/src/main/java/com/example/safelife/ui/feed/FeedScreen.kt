@@ -62,5 +62,26 @@ fun FeedScreen(
                 }
             }
         }
+        // Observa o tipo de usuário (paciente ou profissional)
+        val userType by viewModel.userType.collectAsState()
+        val context = LocalContext.current
+// Obtém usuário atual e busca seu tipo no Firestore
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        LaunchedEffect(currentUser?.uid) {
+            currentUser?.uid?.let { uid ->
+                viewModel.buscarTipoUsuario(uid)
+            }
+        }
+// Exibe o botão de nova postagem apenas para profissionais
+        floatingActionButton = {
+            if (userType.isNotBlank() && userType.equals("profissional", ignoreCase = true)) {
+                FloatingActionButton(onClick = navigateToNovaPostagem) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = "Nova Postagem")
+                }
+            }
+        }
+
+
     }
+
 }
