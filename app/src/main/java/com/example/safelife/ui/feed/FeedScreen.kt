@@ -23,56 +23,32 @@ import com.example.safelife.model.Post
 import com.example.safelife.viewModel.FeedViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
-// Composable principal que representa a tela de feed com uma lista de postagens
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
     viewModel: FeedViewModel,
     navigateToNovaPostagem: () -> Unit
 ) {
-    // Observa a lista de postagens do ViewModel
     val posts by viewModel.posts.collectAsState()
-    // Estrutura base da tela usando Scaffold
+    val userType by viewModel.userType.collectAsState()
+    val context = LocalContext.current
+
+    // Buscar tipo do usuário ao abrir a tela
+    val currentUser = FirebaseAuth.getInstance().currentUser
+
+    LaunchedEffect(currentUser?.uid) {
+        currentUser?.uid?.let { uid ->
+            viewModel.buscarTipoUsuario(uid)
+        }
+    }
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Feed de Apoio") }) },
-        floatingActionButton = { /* será adicionado no commit 2 */ }
-    ) { paddingValues ->
-        // Área principal da tela com padding interno
-        Box(
-            modifier = Modifier.padding(paddingValues).fillMaxSize()
-        ) {
-            if (posts.isEmpty()) {
-                // Mensagem exibida quando não há postagens
-                Text(
-                    text = "Nenhuma publicação ainda.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            } else {
-                // Lista de postagens usando LazyColumn
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(posts.reversed()) { post ->
-                        // Exibição temporária de nome do autor (será substituído por
-                        PostItem)
-                        Text("Postagem de ${post.authorName}")
-                    }
-                }
-            }
-        }
-        // Observa o tipo de usuário (paciente ou profissional)
-        val userType by viewModel.userType.collectAsState()
-        val context = LocalContext.current
-// Obtém usuário atual e busca seu tipo no Firestore
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        LaunchedEffect(currentUser?.uid) {
-            currentUser?.uid?.let { uid ->
-                viewModel.buscarTipoUsuario(uid)
-            }
-        }
-// Exibe o botão de nova postagem apenas para profissionais
+        topBar = {
+            TopAppBar(
+                title = { Text("Feed de Apoio") }
+            )
+        },
         floatingActionButton = {
             if (userType.isNotBlank() && userType.equals("profissional", ignoreCase = true)) {
                 FloatingActionButton(onClick = navigateToNovaPostagem) {
@@ -80,8 +56,152 @@ fun FeedScreen(
                 }
             }
         }
-
-
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+        ) {
+            if (posts.isEmpty()) {
+                Text(
+                    text = "Nenhuma publicação ainda.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(posts.reversed()) { post ->
+                        PostItem(
+                            post = post,
+                            viewModel = viewModel
+                        )
+                    }
+                }
+            }
+        }
     }
+}
 
+@Composable
+fun PostItem(
+    post: Post,
+    viewModel: FeedViewModel
+) {
+    var liked by remember { mutableStateOf(false) }
+    var novoComentario by remember { mutableStateOf(TextFieldValue("")) }
+    val comentarios by viewModel.getCommentsForPost(post.id).collectAsState(initial = emptyList())
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    val likeColor by animateColorAsState(
+        targetValue = if (liked) Color(0xFF00C8FF) else MaterialTheme.colorScheme.onSurfaceVariant
+    )
+
+    val highlightColor = Color(0xFF00C8FF)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = post.authorName,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = post.content,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                IconButton(
+                    onClick = {
+                        liked = !liked
+                        viewModel.atualizarLike(post.id, post.likeCount, liked)
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Favorite,
+                        contentDescription = "Curtir",
+                        tint = likeColor
+                    )
+                }
+                Text(
+                    text = "${post.likeCount}",
+                    color = highlightColor,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                IconButton(onClick = { /* Visualizar comentários */ }) {
+                    Icon(
+                        imageVector = Icons.Default.ChatBubble,
+                        contentDescription = "Comentários",
+                        tint = highlightColor
+                    )
+                }
+                Text(
+                    text = "${comentarios.size} comentários",
+                    color = highlightColor,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            comentarios.forEach { comment ->
+                Text(
+                    text = "${comment.authorName}: ${comment.text}",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(vertical = 2.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = novoComentario,
+                onValueChange = { novoComentario = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Adicionar comentário...") },
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = {
+                    if (novoComentario.text.isNotBlank()) {
+                        coroutineScope.launch {
+                            viewModel.enviarComentario(
+                                postId = post.id,
+                                texto = novoComentario.text,
+                                onSuccess = {
+                                    Toast.makeText(context, "Comentário enviado!", Toast.LENGTH_SHORT).show()
+                                    novoComentario = TextFieldValue("")
+                                },
+                                onFailure = { erro ->
+                                    Toast.makeText(context, erro, Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        }
+                    }
+                },
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text("Enviar")
+            }
+        }
+    }
 }
