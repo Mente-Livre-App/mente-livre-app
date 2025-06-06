@@ -50,5 +50,45 @@ class FeedViewModel(
             .addOnFailureListener {
                 _userType.value = ""
             }
+        // Envia uma nova postagem para o Firestore
+        fun enviarPost(
+            nomeAutor: String,
+            conteudo: String,
+            onSuccess: () -> Unit,
+            onFailure: (String) -> Unit
+        ) {
+        }
+        viewModelScope.launch {
+            try {
+                isSending.value = true
+                val novaPostagem = hashMapOf(
+                    "authorName" to nomeAutor,
+                    "content" to conteudo,
+                    "timestamp" to System.currentTimeMillis(),
+                    "likeCount" to 0
+                )
+                db.collection("posts")
+                    .add(novaPostagem)
+                    .addOnSuccessListener {
+                        isSending.value = false
+                        onSuccess()
+                    }
+                    .addOnFailureListener { e ->
+                        isSending.value = false
+                        onFailure(e.message ?: "Erro ao publicar")
+                    }
+            } catch (e: Exception) {
+                isSending.value = false
+                onFailure(e.message ?: "Erro inesperado ao postar")
+            }
+        }
+        // Atualiza o número de curtidas de uma postagem
+        fun atualizarLike(postId: String, currentLikes: Int, isLiked: Boolean) {
+            val novoLikeCount = if (isLiked) currentLikes + 1 else (currentLikes
+            1).coerceAtLeast(0)
+            db.collection("posts").document(postId)
+                .update("likeCount", novoLikeCount)
+        }
     }
+
 }
