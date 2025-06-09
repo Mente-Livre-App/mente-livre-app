@@ -6,6 +6,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.Alignment
+import java.time.format.TextStyle
+import java.util.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.safelife.repository.Profissional
@@ -52,7 +57,36 @@ fun AgendamentoPacienteScreen(
                         }
                     )
                 }
-            }
+                val horariosDisponiveis by viewModel.horariosDisponiveis.collectAsState()
+                val diaSelecionado by viewModel.diaSelecionado.collectAsState()
+                val horarioSelecionado by viewModel.horarioSelecionado.collectAsState()
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Dia da Semana: ${diaSelecionado.dayOfWeek.getDisplayName(TextStyle.FULL,
+                        Locale("pt", "BR"))} - ${diaSelecionado.dayOfMonth}/${diaSelecionado.monthValue}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Horários Disponíveis:", style = MaterialTheme.typography.bodyMedium)
+                val listaHorarios = horariosDisponiveis[diaSelecionado.dayOfWeek.name] ?: emptyList()
+                LazyColumn {
+                    items(listaHorarios) { horario ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.atualizarHorarioSelecionado(horario) }
+                                .padding(vertical = 8.dp)
+                        ) {
+                            RadioButton(
+                                selected = horarioSelecionado == horario,
+                                onClick = { viewModel.atualizarHorarioSelecionado(horario) }
+                            )
+                            Text(text = horario)
+                        }
+                    }
+
+                }
         }
     }
 }
