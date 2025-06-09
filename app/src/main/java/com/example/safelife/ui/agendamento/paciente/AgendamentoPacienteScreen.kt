@@ -88,5 +88,24 @@ fun AgendamentoPacienteScreen(
 
                 }
         }
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    if (profissionalSelecionado != null && horarioSelecionado != null) {
+                        viewModel.agendarConsulta(
+                            profissionalId = profissionalSelecionado!!.uid,
+                            dia = diaSelecionado.dayOfWeek.name,
+                            horario = horarioSelecionado!!,
+                            nome = "Nome do paciente",
+                            email = "email@paciente.com",
+                            telefone = "11999999999"
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = profissionalSelecionado != null && horarioSelecionado != null
+            ) {
+            }
+            Text("Agendar")
     }
 }
