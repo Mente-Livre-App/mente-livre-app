@@ -11,6 +11,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.compose.foundation.verticalScroll
+import kotlinx.coroutines.launch
 import com.example.safelife.ui.agendamento.profissional.componentes.HorarioSelector
 import com.example.safelife.viewModel.agendamento.profissional.AgendaProfissionalViewModel
 @Composable
@@ -91,5 +93,50 @@ fun AgendaProfissionalScreen(
                         Text("Salvar Disponibilidade")
                     }
                 }
+                if (horariosSelecionados.isNotEmpty()) {
+                    Text(
+                        text = "Horários salvos para $diaSelecionado:",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                    horariosSelecionados.forEach { hora ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(hora)
+                            Button(
+                                onClick = {
+                                    if (viewModel.podeRemover(diaSelecionado!!, hora)) {
+                                        horariosSelecionados = horariosSelecionados - hora
+                                        viewModel.salvarHorarios(diaSelecionado!!, horariosSelecionados)
+                                    } else {
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                "Horário já agendado, entre em contato com o paciente
+                                                        antes de cancelar"
+                                            )
+                                        }
+                                    }
+                                }
+                            ) {
+                                Text("Remover")
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(
+                    onClick = {
+                        ) {
+                    },
+                        navController.navigate("agendamentosConfirmados")
+                        modifier = Modifier.fillMaxWidth()
+                        Text("Meus Agendamentos")
+                    }
             }
+        }
+        }
         }
