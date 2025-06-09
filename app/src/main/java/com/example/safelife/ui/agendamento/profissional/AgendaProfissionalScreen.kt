@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.safelife.ui.agendamento.profissional.componentes.HorarioSelector
 import com.example.safelife.viewModel.agendamento.profissional.AgendaProfissionalViewModel
 @Composable
 fun AgendaProfissionalScreen(
@@ -58,6 +59,37 @@ fun AgendaProfissionalScreen(
                     ),
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
+                }
+                if (diaSelecionado != null) {
+                    Text(
+                        text = "Horários para $diaSelecionado:",
+                        fontSize = 18.sp,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                    HorarioSelector(
+                        diaSelecionado = diaSelecionado!!,
+                        horarios = horarios,
+                        horariosSelecionados = horariosSelecionados,
+                        onChange = { horariosSelecionados = it },
+                        viewModel = viewModel,
+                        edicoesPendentes = edicoesPendentes
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            edicoesPendentes.value.forEach { (dia, horarios) ->
+                                viewModel.salvarHorarios(dia, horarios)
+                            }
+                            viewModel.atualizarHorariosNoFirestore(viewModel.disponibilidade.value)
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Disponibilidade salva com sucesso no
+                                        Firebase")
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Salvar Disponibilidade")
+                    }
                 }
             }
         }
