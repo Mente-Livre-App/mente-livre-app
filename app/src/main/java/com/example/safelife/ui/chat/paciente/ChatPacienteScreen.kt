@@ -16,6 +16,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.safelife.model.Message
 import com.example.safelife.viewModel.chat.paciente.ChatPacienteViewModel
 import com.example.safelife.viewModel.chat.paciente.ChatPacienteViewModelFactory
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.layout.imePadding
+import kotlinx.coroutines.launch
+
 
 
 @Composable
@@ -27,40 +32,76 @@ fun ChatScreen(
     val messages = viewModel.messages
     var messageText by remember { mutableStateOf("") }
 
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Lista de mensagens
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(messages) { message ->
-                MessageBubble(message, isCurrentUser = message.senderId == currentUserId)
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(messages) {
+        snapshotFlow { messages.size }.collect {
+            coroutineScope.launch {
+                if (messages.isNotEmpty()) {
+                    listState.animateScrollToItem(0)
+                }
             }
         }
+    }
 
-        // Campo de mensagem e botão de envio
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextField(
-                value = messageText,
-                onValueChange = { messageText = it },
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("Digite uma mensagem...") }
-            )
+//    val mensagensOrdenadas = messages.sortedBy { it.timestamp }.reversed()
+    val mensagensOrdenadas = messages
+        .filter { it.timestamp != null }
+        .sortedBy { it.timestamp }
+        .reversed()
 
-            IconButton(
-                onClick = {
-                    viewModel.sendMessage(messageText)
-                    messageText = ""
-                },
-                enabled = messageText.isNotBlank()
+
+    // Corrigir comportamento do teclado
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = WindowInsets.ime.asPaddingValues().calculateBottomPadding())
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+
+
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                reverseLayout = true
             ) {
-                Icon(Icons.Default.Send, contentDescription = "Enviar")
+                items(mensagensOrdenadas) { message ->
+                    MessageBubble(message, isCurrentUser = message.senderId == currentUserId)
+                }
             }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextField(
+                    value = messageText,
+                    onValueChange = { messageText = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Digite uma mensagem...") }
+                )
+
+                IconButton(
+                    onClick = {
+                        viewModel.sendMessage(messageText)
+                        messageText = ""
+                    },
+                    enabled = messageText.isNotBlank()
+                ) {
+                    Icon(Icons.Default.Send, contentDescription = "Enviar")
+                }
+            }
+
+            // Espaço que compensa o teclado se necessário
+            Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.ime))
         }
     }
 }
