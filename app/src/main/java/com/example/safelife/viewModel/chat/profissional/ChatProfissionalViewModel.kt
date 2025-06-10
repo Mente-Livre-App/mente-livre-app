@@ -11,7 +11,8 @@ import kotlinx.coroutines.launch
 
 class ChatProfissionalViewModel(
     private val profissionalId: String,
-    private val pacienteId: String
+    private val pacienteId: String,
+    private val agendamentoId: String
 ) : ViewModel() {
 
     private val chatRepository = ChatRepository()
@@ -27,7 +28,13 @@ class ChatProfissionalViewModel(
     fun iniciarOuCarregarChat() {
         viewModelScope.launch {
             try {
-                chatId = chatRepository.getOrCreateChatId(profissionalId, pacienteId)
+                chatId = chatRepository.getOrCreateChatId(
+                    user1 = profissionalId,
+                    user2 = pacienteId,
+                    userType = "profissional",
+                    agendamentoId = agendamentoId
+                )
+
 
                 chatRepository.observeMessages(chatId).collect { novasMensagens ->
                     _mensagens.value = novasMensagens
@@ -45,7 +52,7 @@ class ChatProfissionalViewModel(
             senderId = profissionalId,
             receiverId = pacienteId,
             text = texto,
-            timestamp = System.currentTimeMillis(),
+            timestamp = null,
             read = false
         )
 
