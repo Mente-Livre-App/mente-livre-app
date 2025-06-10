@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "785648474436",
+    "project_id": "mente-livre-app",
+    "storage_bucket": "mente-livre-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:785648474436:android:8465dbdb80e8b68a5c1f11",
+        "android_client_info": {
+          "package_name": "com.example.safelife"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAcp9vmO2tRmTZuW3bqIw6cRUnoWhOSLo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
