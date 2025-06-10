@@ -8,7 +8,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-// ✅ Extensão para o DataStore associada ao contexto
+//  Extensão para o DataStore associada ao contexto
 private val Context.dataStore by preferencesDataStore(name = "lgpd_prefs")
 
 /**

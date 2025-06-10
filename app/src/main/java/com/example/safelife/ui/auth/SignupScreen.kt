@@ -23,11 +23,13 @@ import com.example.safelife.R
 import com.example.safelife.viewModel.AuthViewModel
 import kotlinx.coroutines.launch
 
+
 @Composable
 fun SignupScreen(
     navigateToHome: () -> Unit,
-    authViewModel: AuthViewModel = viewModel() // ✅ Agora aceita parâmetro injetável
+    authViewModel: AuthViewModel = viewModel() // ViewModel pode ser injetado para facilitar testes
 ) {
+    // Encapsula a lógica em um composable reutilizável e testável
     SignupScreenTestable(
         navigateToHome = navigateToHome,
         viewModel = authViewModel
@@ -41,6 +43,7 @@ fun SignupScreenTestable(
 ) {
     val context = LocalContext.current
 
+    // Estados para capturar as entradas do formulário
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
@@ -50,8 +53,10 @@ fun SignupScreenTestable(
     var crp by remember { mutableStateOf("") }
     val isProfessional = userType == "Profissional"
     var isLoading by remember { mutableStateOf(false) }
+
     val coroutineScope = rememberCoroutineScope()
 
+    // Animação de carregamento enquanto a requisição é processada
     if (isLoading) {
         val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.loading_animation_aviao))
         LottieAnimation(
@@ -60,6 +65,7 @@ fun SignupScreenTestable(
             modifier = Modifier.fillMaxSize()
         )
     } else {
+        // Formulário de cadastro
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -74,8 +80,10 @@ fun SignupScreenTestable(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Título da tela
                 Text(text = "Cadastro", style = MaterialTheme.typography.headlineMedium)
 
+                // Campo: Nome
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -84,6 +92,7 @@ fun SignupScreenTestable(
                     keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
                 )
 
+                // Campo: E-mail
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
@@ -92,6 +101,7 @@ fun SignupScreenTestable(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next)
                 )
 
+                // Campo: Telefone
                 OutlinedTextField(
                     value = phoneNumber,
                     onValueChange = { phoneNumber = it },
@@ -100,6 +110,7 @@ fun SignupScreenTestable(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next)
                 )
 
+                // Campo: Senha
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -109,6 +120,7 @@ fun SignupScreenTestable(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next)
                 )
 
+                // Campo: Confirmar Senha
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
@@ -118,6 +130,7 @@ fun SignupScreenTestable(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done)
                 )
 
+                // Seletor de tipo de usuário (Paciente ou Profissional)
                 Text("Selecione o tipo de usuário:")
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(
@@ -135,6 +148,7 @@ fun SignupScreenTestable(
                     Text("Profissional")
                 }
 
+                // Campo CRP (aparece apenas se for profissional)
                 if (isProfessional) {
                     OutlinedTextField(
                         value = crp,
@@ -147,8 +161,10 @@ fun SignupScreenTestable(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Botão de confirmação do cadastro
                 Button(
                     onClick = {
+                        // Validação dos campos antes de prosseguir
                         if (name.isBlank() || email.isBlank() || phoneNumber.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
                             Toast.makeText(context, "Todos os campos são obrigatórios.", Toast.LENGTH_SHORT).show()
                         } else if (password != confirmPassword) {
@@ -156,6 +172,7 @@ fun SignupScreenTestable(
                         } else if (isProfessional && crp.isBlank()) {
                             Toast.makeText(context, "Profissionais precisam informar o CRP.", Toast.LENGTH_SHORT).show()
                         } else {
+                            // Executa o cadastro no ViewModel
                             coroutineScope.launch {
                                 isLoading = true
                                 viewModel.signup(

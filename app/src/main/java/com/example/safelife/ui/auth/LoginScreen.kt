@@ -23,18 +23,17 @@ import com.example.safelife.viewModel.AuthViewModel
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.withStyle
 
-
 @Composable
 fun LoginScreen(navigateToHome: () -> Unit, navigateToSignup: () -> Unit) {
-    // Obtém a instância do ViewModel de autenticação
+    // ViewModel responsável pela lógica de autenticação
     val viewModel: AuthViewModel = viewModel()
     val context = LocalContext.current
 
-    // Estados para armazenar email e senha digitados pelo usuário
+    // Estados para capturar o que o usuário digita nos campos de login
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    // Layout da tela de login
+    // Layout principal com centralização e padding
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -46,17 +45,18 @@ fun LoginScreen(navigateToHome: () -> Unit, navigateToSignup: () -> Unit) {
                 .fillMaxWidth()
                 .wrapContentHeight()
                 .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState()), // Permite rolagem
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Título e Subtítulo
+            // Título principal
             Text(
                 text = "Seja Bem-Vindo",
                 style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFFFFC43D) // ✅ Cor amarela conforme imagem
+                color = Color(0xFFFFC43D)
             )
 
+            // Descrição curta da proposta da plataforma
             Text(
                 text = "O Mente livre conecta você a profissionais de saúde mental e grupos de apoio.",
                 style = MaterialTheme.typography.bodyLarge,
@@ -65,41 +65,50 @@ fun LoginScreen(navigateToHome: () -> Unit, navigateToSignup: () -> Unit) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Subtítulo
             Text(
                 text = "Faça seu Login",
                 style = MaterialTheme.typography.headlineSmall,
                 color = Color.Black
             )
 
-
+            // Campo de e-mail
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("E-mail") },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next)
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                )
             )
 
+            // Campo de senha com ocultação de caracteres
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Senha") },
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done)
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                )
             )
 
-            // Botão de "Esqueceu a senha?"
+            // Link de "Esqueceu a senha?"
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "Esqueceu a senha?",
-                    color = Color(0xFF726C6C), // Cor Cinza Escuro
+                    color = Color(0xFF726C6C),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
+                // Botão que chama a função de redefinição de senha
                 TextButton(onClick = {
                     if (email.isNotEmpty()) {
                         viewModel.resetPassword(email) { success, message ->
@@ -115,7 +124,7 @@ fun LoginScreen(navigateToHome: () -> Unit, navigateToSignup: () -> Unit) {
                 }) {
                     Text(
                         text = "Clique aqui",
-                        color = Color(0xFFED474A), // Cor Vermelha
+                        color = Color(0xFFED474A),
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -123,31 +132,38 @@ fun LoginScreen(navigateToHome: () -> Unit, navigateToSignup: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Botão de login
             Button(
                 onClick = {
                     if (email.isBlank() || password.isBlank()) {
-                        // Exibe um Toast informando que os campos são obrigatórios
-                        Toast.makeText(context, "Por favor, preencha todos os campos", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            "Por favor, preencha todos os campos",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     } else {
-                        Log.d("LoginScreen", "Tentativa de login com email: $email")
-                        viewModel.login(email, password, onSuccess = {
-                            Log.d("LoginScreen", "Login bem-sucedido para email: $email")
-                            navigateToHome()
-                        }, onError = { error ->
-                            Log.e("LoginScreen", "Erro ao fazer login: $error")
-                            Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
-                        })
+                        // Realiza login via ViewModel
+                        viewModel.login(
+                            email,
+                            password,
+                            onSuccess = {
+                                navigateToHome()
+                            },
+                            onError = { error ->
+                                Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                            }
+                        )
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF536DFE)) // Cor Azul do botão
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF536DFE))
             ) {
                 Text(text = "Acessar", color = Color.White)
             }
 
-
+            // Link para a tela de cadastro
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 TextButton(onClick = navigateToSignup) {
                     Text(buildAnnotatedString {

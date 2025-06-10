@@ -17,43 +17,56 @@ import java.util.*
 import kotlinx.coroutines.launch
 import com.example.safelife.ui.agendamento.profissional.componentes.HorarioSelector
 
-
 @Composable
 fun AgendaProfissionalScreen(
     navController: NavController,
     profissionalId: String,
     viewModel: AgendaProfissionalViewModel = viewModel()
 ) {
+    // Salva os dados fixos do profissional (nome, email, tipo) na coleção "disponibilidade"
     LaunchedEffect(Unit) {
         viewModel.salvarDadosProfissionalNoFirestore()
-
     }
 
     val coroutineScope = rememberCoroutineScope()
+
+    // Armazena temporariamente os horários editados antes de persistir no Firestore
     val edicoesPendentes = remember { mutableStateOf<Map<String, Set<String>>>(emptyMap()) }
+
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Lista de dias e horários fixos
     val diasSemana = listOf("Seg", "Ter", "Qua", "Qui", "Sex", "Sáb")
     val horarios = listOf("08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00")
 
+    // Estados da UI
     var diaSelecionado by remember { mutableStateOf<String?>(null) }
     var horariosSelecionados by remember { mutableStateOf(emptySet<String>()) }
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .verticalScroll(rememberScrollState())
-        .padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
         Text(
             text = "Definir Disponibilidade",
             fontSize = 22.sp,
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
+        // Host para exibir mensagens de feedback
         SnackbarHost(hostState = snackbarHostState)
 
-        // Botões dos dias da semana
-        Row(modifier = Modifier
-            .horizontalScroll(rememberScrollState())
-            .padding(bottom = 16.dp)) {
+        /**
+         * Seção com botões para selecionar os dias da semana.
+         * Ao clicar, carrega os horários já salvos ou edições pendentes para aquele dia.
+         */
+        Row(
+            modifier = Modifier
+                .horizontalScroll(rememberScrollState())
+                .padding(bottom = 16.dp)
+        ) {
             diasSemana.forEach { dia ->
                 val selecionado = dia == diaSelecionado
                 Button(
@@ -72,6 +85,10 @@ fun AgendaProfissionalScreen(
             }
         }
 
+        /**
+         * Grade com os horários do dia selecionado.
+         * Permite marcar/desmarcar horários usando o componente HorarioSelector.
+         */
         if (diaSelecionado != null) {
             Text(
                 text = "Horários para $diaSelecionado:",
@@ -79,7 +96,6 @@ fun AgendaProfissionalScreen(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
 
-            // Grade de horários
             HorarioSelector(
                 diaSelecionado = diaSelecionado!!,
                 horarios = horarios,
@@ -89,17 +105,18 @@ fun AgendaProfissionalScreen(
                 edicoesPendentes = edicoesPendentes
             )
 
-
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botão para salvar (mock)
+            /**
+             * Botão que salva os horários editados no Firestore.
+             * Atualiza o campo "horarios" do documento correspondente ao profissional.
+             */
             Button(
                 onClick = {
                     edicoesPendentes.value.forEach { (dia, horarios) ->
                         viewModel.salvarHorarios(dia, horarios)
                     }
 
-                    // Salva apenas os horários
                     viewModel.atualizarHorariosNoFirestore(viewModel.disponibilidade.value)
 
                     coroutineScope.launch {
@@ -110,9 +127,12 @@ fun AgendaProfissionalScreen(
             ) {
                 Text("Salvar Disponibilidade")
             }
-
         }
 
+        /**
+         * Lista os horários marcados para o dia atual com opção de remover.
+         * O horário só pode ser removido se não houver agendamentos vinculados.
+         */
         if (horariosSelecionados.isNotEmpty()) {
             Text(
                 text = "Horários salvos para $diaSelecionado:",
@@ -134,7 +154,6 @@ fun AgendaProfissionalScreen(
                                 horariosSelecionados = horariosSelecionados - hora
                                 viewModel.salvarHorarios(diaSelecionado!!, horariosSelecionados)
                             } else {
-                                // mostra mensagem
                                 coroutineScope.launch {
                                     snackbarHostState.showSnackbar(
                                         "Horário já agendado, entre em contato com o paciente antes de cancelar"
@@ -149,10 +168,11 @@ fun AgendaProfissionalScreen(
             }
         }
 
-
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Botão Meus Agendamentos
+        /**
+         * Botão para navegar até a tela de visualização dos agendamentos confirmados.
+         */
         Button(
             onClick = {
                 navController.navigate("agendamentosConfirmados")

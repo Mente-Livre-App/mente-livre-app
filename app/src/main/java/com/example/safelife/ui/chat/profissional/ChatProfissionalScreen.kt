@@ -16,26 +16,38 @@ import com.example.safelife.viewModel.chat.profissional.ChatProfissionalViewMode
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.imePadding
 import kotlinx.coroutines.launch
-
+/**
+ * Tela de chat utilizada por profissionais para conversar com um paciente específico.
+ *
+ * @param profissionalId ID do profissional logado.
+ * @param pacienteId ID do paciente com quem o profissional está conversando.
+ */
 @Composable
 fun ChatProfissionalScreen(
     profissionalId: String,
     pacienteId: String
 ) {
+    // ViewModel com parâmetros injetados via Factory
     val viewModel: ChatProfissionalViewModel = viewModel(
         factory = ChatProfissionalViewModelFactory(profissionalId, pacienteId)
     )
 
+    // Lista de mensagens observada em tempo real
     val mensagens by viewModel.mensagens.collectAsState()
+
+    // Campo de texto controlado
     var textoMensagem by remember { mutableStateOf(TextFieldValue("")) }
 
+    // Controle da rolagem automática
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
+    // Inicia ou recupera o ID do chat no Firestore
     LaunchedEffect(Unit) {
         viewModel.iniciarOuCarregarChat()
     }
 
+    // Rola automaticamente para a última mensagem recebida
     LaunchedEffect(mensagens.size) {
         coroutineScope.launch {
             if (mensagens.isNotEmpty()) {
@@ -44,6 +56,7 @@ fun ChatProfissionalScreen(
         }
     }
 
+    // Ordena mensagens por timestamp de forma decrescente
     val mensagensOrdenadas = mensagens
         .filter { it.timestamp != null }
         .sortedBy { it.timestamp }
@@ -54,8 +67,9 @@ fun ChatProfissionalScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .imePadding() // ✅ Ajusta para não empurrar conteúdo ao abrir o teclado
+            .imePadding() // Ajusta a altura ao abrir o teclado
     ) {
+        // Título da tela
         Text(
             text = "Conversa com paciente",
             style = MaterialTheme.typography.titleMedium,
@@ -64,6 +78,7 @@ fun ChatProfissionalScreen(
                 .padding(vertical = 16.dp)
         )
 
+        // Lista de mensagens com rolagem reversa
         LazyColumn(
             state = listState,
             modifier = Modifier
@@ -75,6 +90,7 @@ fun ChatProfissionalScreen(
             items(mensagensOrdenadas) { mensagem ->
                 val alinhamento =
                     if (mensagem.senderId == profissionalId) Alignment.End else Alignment.Start
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -98,6 +114,7 @@ fun ChatProfissionalScreen(
             }
         }
 
+        // Campo de entrada e botão de envio
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -118,7 +135,7 @@ fun ChatProfissionalScreen(
                     if (textoMensagem.text.isNotBlank()) {
                         Log.d("ChatProfissionalScreen", "Enviando: ${textoMensagem.text}")
                         viewModel.enviarMensagem(textoMensagem.text)
-                        textoMensagem = TextFieldValue("")
+                        textoMensagem = TextFieldValue("") // Limpa campo após envio
                     }
                 }
             ) {

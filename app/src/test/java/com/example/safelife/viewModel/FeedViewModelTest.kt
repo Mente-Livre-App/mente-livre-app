@@ -6,12 +6,11 @@ import com.google.android.gms.tasks.OnSuccessListener
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import io.mockk.*
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.*
 import org.junit.After
 import org.junit.Assert.*
@@ -47,7 +46,6 @@ class FeedViewModelTest {
 
         every { db.collection("posts") } returns postsCollection
         every { postsCollection.add(any()) } returns task
-
         every { task.addOnSuccessListener(any()) } returns task
         every { task.addOnFailureListener(any()) } answers {
             val listener = arg<com.google.android.gms.tasks.OnFailureListener>(0)
@@ -66,8 +64,7 @@ class FeedViewModelTest {
         )
 
         advanceUntilIdle()
-
-        assertFalse("onSuccess não deve ser chamado", sucesso)
+        assertFalse(sucesso)
         assertEquals("Falha simulada", erro)
     }
 
@@ -79,20 +76,14 @@ class FeedViewModelTest {
         every { db.collection("usuarios") } returns mockk {
             every { document("uid123") } returns documentRef
         }
-
         every { documentRef.get() } returns task
-
         every { task.addOnSuccessListener(any()) } answers {
-            val listener =
-                arg<com.google.android.gms.tasks.OnSuccessListener<com.google.firebase.firestore.DocumentSnapshot>>(
-                    0
-                )
+            val listener = arg<com.google.android.gms.tasks.OnSuccessListener<com.google.firebase.firestore.DocumentSnapshot>>(0)
             val snapshot = mockk<com.google.firebase.firestore.DocumentSnapshot>()
             every { snapshot.getString("userType") } returns "paciente"
             listener.onSuccess(snapshot)
             task
         }
-
         every { task.addOnFailureListener(any()) } returns task
 
         viewModel.buscarTipoUsuario("uid123")
@@ -109,9 +100,7 @@ class FeedViewModelTest {
         every { db.collection("usuarios") } returns mockk {
             every { document("uid123") } returns documentRef
         }
-
         every { documentRef.get() } returns task
-
         every { task.addOnSuccessListener(any()) } returns task
         every { task.addOnFailureListener(any()) } answers {
             val listener = arg<com.google.android.gms.tasks.OnFailureListener>(0)
@@ -126,64 +115,55 @@ class FeedViewModelTest {
     }
 
     @Test
-    fun `atualizarLike deve incrementar o likeCount corretamente quando isLiked for true`() {
+    fun `toggleLike deve adicionar like quando ainda nao curtiu`() {
         val postId = "post123"
-        val currentLikes = 5
+        val userId = "user123"
         val documentRef = mockk<DocumentReference>(relaxed = true)
 
         every { db.collection("posts") } returns mockk {
             every { document(postId) } returns documentRef
         }
 
-        viewModel.atualizarLike(postId, currentLikes, isLiked = true)
+        viewModel.toggleLike(postId, userId, isCurrentlyLiked = false)
 
         verify {
-            documentRef.update("likeCount", 6)
+            documentRef.update(
+                mapOf(
+                    "likeCount" to FieldValue.increment(1),
+                    "likedBy" to FieldValue.arrayUnion(userId)
+                )
+            )
         }
     }
 
     @Test
-    fun `atualizarLike deve decrementar o likeCount corretamente quando isLiked for false`() {
+    fun `toggleLike deve remover like quando ja curtiu`() {
         val postId = "post123"
-        val currentLikes = 5
+        val userId = "user123"
         val documentRef = mockk<DocumentReference>(relaxed = true)
 
         every { db.collection("posts") } returns mockk {
             every { document(postId) } returns documentRef
         }
 
-        viewModel.atualizarLike(postId, currentLikes, isLiked = false)
+        viewModel.toggleLike(postId, userId, isCurrentlyLiked = true)
 
         verify {
-            documentRef.update("likeCount", 4)
-        }
-    }
-
-    @Test
-    fun `atualizarLike deve manter likeCount em zero se currentLikes for zero e isLiked for false`() {
-        val postId = "post123"
-        val currentLikes = 0
-        val documentRef = mockk<DocumentReference>(relaxed = true)
-
-        every { db.collection("posts") } returns mockk {
-            every { document(postId) } returns documentRef
-        }
-
-        viewModel.atualizarLike(postId, currentLikes, isLiked = false)
-
-        verify {
-            documentRef.update("likeCount", 0)
+            documentRef.update(
+                mapOf(
+                    "likeCount" to FieldValue.increment(-1),
+                    "likedBy" to FieldValue.arrayRemove(userId)
+                )
+            )
         }
     }
 
     @Test
     fun `getCommentsForPost deve retornar StateFlow vazio inicialmente`() = runTest {
         val postId = "post123"
-
         val commentsFlow = viewModel.getCommentsForPost(postId)
-
-        assertNotNull("Deve retornar um StateFlow", commentsFlow)
-        assertTrue("A lista de comentários deve estar vazia", commentsFlow.value.isEmpty())
+        assertNotNull(commentsFlow)
+        assertTrue(commentsFlow.value.isEmpty())
     }
 
     @Test
@@ -193,7 +173,6 @@ class FeedViewModelTest {
 
         every { db.collection("posts") } returns postsCollection
         every { postsCollection.add(any()) } returns task
-
         every { task.addOnSuccessListener(any()) } returns task
         every { task.addOnFailureListener(any()) } answers {
             val listener = arg<com.google.android.gms.tasks.OnFailureListener>(0)
@@ -210,11 +189,8 @@ class FeedViewModelTest {
             onFailure = { erro = it }
         )
 
-        // Aguarda a inicialização da corrotina e execução da linha isSending = true
         advanceUntilIdle()
-
-        // Primeiro assert: já deve estar false porque addOnFailureListener é executado logo após a chamada
-        assertFalse("isSending deveria ser false após falha", viewModel.isSending.value)
+        assertFalse(viewModel.isSending.value)
         assertEquals("Erro simulado", erro)
     }
 
@@ -225,8 +201,6 @@ class FeedViewModelTest {
 
         every { db.collection("posts") } returns postsCollection
         every { postsCollection.add(any()) } returns task
-
-        // Simula sucesso no Firebase
         every { task.addOnSuccessListener(any()) } answers {
             val listener = arg<OnSuccessListener<DocumentReference>>(0)
             listener.onSuccess(mockk())
@@ -245,9 +219,8 @@ class FeedViewModelTest {
         )
 
         advanceUntilIdle()
-
-        assertTrue("onSuccess deveria ter sido chamado", sucesso)
-        assertNull("onFailure não deve ser chamado", erro)
+        assertTrue(sucesso)
+        assertNull(erro)
     }
 
     @Test
@@ -259,7 +232,6 @@ class FeedViewModelTest {
         every { auth.currentUser } returns mockk {
             every { displayName } returns "Gabriel"
         }
-
         every { db.collection("posts") } returns mockk {
             every { document(postId) } returns documentRef
         }
@@ -276,7 +248,6 @@ class FeedViewModelTest {
         )
 
         advanceUntilIdle()
-
         assertEquals("Erro ao adicionar comentário", erro)
     }
 }

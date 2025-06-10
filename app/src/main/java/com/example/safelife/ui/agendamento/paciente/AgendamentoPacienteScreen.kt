@@ -26,17 +26,22 @@ fun AgendamentoPacienteScreen(
     navController: NavController,
     viewModel: AgendamentoPacienteViewModel = viewModel()
 ) {
+    // Observa os estados da ViewModel
     val profissionais by viewModel.profissionais.collectAsState()
     val horariosDisponiveis by viewModel.horariosDisponiveis.collectAsState()
     val diaSelecionado by viewModel.diaSelecionado.collectAsState()
     val horarioSelecionado by viewModel.horarioSelecionado.collectAsState()
 
+    // Estados locais
     var profissionalSelecionado by remember { mutableStateOf<Profissional?>(null) }
     var expanded by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val diasComHorarios = horariosDisponiveis.keys.toList()
 
+    /**
+     * Função utilitária que avança ou retrocede o dia atual até encontrar um com horários disponíveis.
+     */
     fun avancarDiaAtual(diaAtual: LocalDate, proximo: Boolean): LocalDate {
         var dia = diaAtual
         repeat(7) {
@@ -47,6 +52,7 @@ fun AgendamentoPacienteScreen(
         return diaAtual
     }
 
+    // Carrega os profissionais assim que a tela for aberta
     LaunchedEffect(Unit) {
         viewModel.carregarProfissionaisDisponiveis()
     }
@@ -58,6 +64,7 @@ fun AgendamentoPacienteScreen(
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
+        // Dropdown com a lista de profissionais disponíveis
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = !expanded }
@@ -93,6 +100,7 @@ fun AgendamentoPacienteScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Botões para navegar entre os dias com horários
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth()
@@ -114,6 +122,7 @@ fun AgendamentoPacienteScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Exibe o dia da semana e data atual selecionada
         Text(
             text = "Dia da Semana: ${diaSelecionado.dayOfWeek.getDisplayName(TextStyle.FULL, Locale("pt", "BR"))} - ${diaSelecionado.dayOfMonth}/${diaSelecionado.monthValue}",
             style = MaterialTheme.typography.bodyLarge
@@ -123,6 +132,7 @@ fun AgendamentoPacienteScreen(
 
         Text("Horários Disponíveis:", style = MaterialTheme.typography.bodyMedium)
 
+        // Traduz o dia da semana para a chave usada no Firebase
         val diaChave = when (diaSelecionado.dayOfWeek) {
             DayOfWeek.MONDAY -> "Seg"
             DayOfWeek.TUESDAY -> "Ter"
@@ -134,6 +144,7 @@ fun AgendamentoPacienteScreen(
         }
         val listaHorarios = horariosDisponiveis[diaChave] ?: emptyList()
 
+        // Lista de horários disponíveis com seleção via RadioButton
         LazyColumn {
             items(listaHorarios) { horario ->
                 Row(
@@ -154,6 +165,7 @@ fun AgendamentoPacienteScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Botão de confirmação do agendamento
         Button(
             onClick = {
                 if (profissionalSelecionado != null && horarioSelecionado != null) {
@@ -161,7 +173,7 @@ fun AgendamentoPacienteScreen(
                         profissionalId = profissionalSelecionado!!.uid,
                         dia = diaChave,
                         horario = horarioSelecionado!!,
-                        nome = "Nome do paciente",
+                        nome = "Nome do paciente", // 🔧 Pode ser dinâmico no futuro
                         email = "email@paciente.com",
                         telefone = "11999999999",
                         onSuccess = {

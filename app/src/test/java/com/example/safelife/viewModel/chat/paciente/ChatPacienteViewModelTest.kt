@@ -6,12 +6,12 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.*
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-
 @OptIn(ExperimentalCoroutinesApi::class)
 class ChatPacienteViewModelTest {
 
@@ -25,14 +25,25 @@ class ChatPacienteViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         chatRepository = mockk(relaxed = true)
+
+        // Mock para evitar exceção no collect
+        coEvery { chatRepository.getOrCreateChatId(currentUserId, otherUserId) } returns "chatABC"
+        coEvery { chatRepository.observeMessages("chatABC") } returns flow {
+            emit(emptyList()) // evita erro no init
+        }
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     @Test
     fun `estado inicial deve conter lista vazia de mensagens`() = runTest {
         val viewModel = ChatPacienteViewModel(currentUserId, otherUserId, chatRepository)
+        advanceUntilIdle()
         assertTrue(viewModel.messages.isEmpty())
     }
-
 
     @Test
     fun `setupChat deve popular mensagens corretamente`() = runTest {
@@ -40,7 +51,7 @@ class ChatPacienteViewModelTest {
             Message("paciente123", "profissional456", "Oi", null, false)
         )
 
-        coEvery { chatRepository.getOrCreateChatId(currentUserId, otherUserId) } returns "chatABC"
+        // Simula fluxo com mensagens
         coEvery { chatRepository.observeMessages("chatABC") } returns flow {
             emit(mensagensMock)
         }
@@ -51,6 +62,4 @@ class ChatPacienteViewModelTest {
         assertEquals(1, viewModel.messages.size)
         assertEquals("Oi", viewModel.messages.first().text)
     }
-
-
 }

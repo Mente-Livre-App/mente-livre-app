@@ -22,19 +22,21 @@ import androidx.compose.foundation.layout.imePadding
 import kotlinx.coroutines.launch
 
 
-
 @Composable
 fun ChatScreen(
-    currentUserId: String,
-    otherUserId: String,
+    currentUserId: String,  // ID do usuário atual (quem está logado)
+    otherUserId: String,    // ID do outro usuário (destinatário da conversa)
     viewModel: ChatPacienteViewModel = viewModel(factory = ChatPacienteViewModelFactory(currentUserId, otherUserId))
 ) {
-    val messages = viewModel.messages
-    var messageText by remember { mutableStateOf("") }
+    val messages = viewModel.messages                     // Lista de mensagens observável
+    var messageText by remember { mutableStateOf("") }    // Texto atual digitado pelo usuário
 
-    val listState = rememberLazyListState()
+    val listState = rememberLazyListState()               // Estado para controlar rolagem da lista
     val coroutineScope = rememberCoroutineScope()
 
+    /**
+     * Quando novas mensagens forem recebidas, rola automaticamente para a última mensagem.
+     */
     LaunchedEffect(messages) {
         snapshotFlow { messages.size }.collect {
             coroutineScope.launch {
@@ -45,22 +47,23 @@ fun ChatScreen(
         }
     }
 
-//    val mensagensOrdenadas = messages.sortedBy { it.timestamp }.reversed()
+    // Ordena as mensagens por timestamp de forma decrescente (mensagem mais nova no topo)
     val mensagensOrdenadas = messages
         .filter { it.timestamp != null }
         .sortedBy { it.timestamp }
         .reversed()
 
-
-    // Corrigir comportamento do teclado
+    /**
+     * Layout principal do chat, com rolagem e ajuste ao teclado virtual.
+     */
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .imePadding() // ✅ faz a tela respeitar a altura do teclado
+            .imePadding() // Ajusta o conteúdo para não ficar escondido atrás do teclado
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
 
-
+            // Lista de mensagens com rolagem reversa (de baixo pra cima)
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -76,6 +79,7 @@ fun ChatScreen(
 
             Spacer(modifier = Modifier.height(4.dp))
 
+            // Campo de texto e botão de enviar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -100,12 +104,19 @@ fun ChatScreen(
                 }
             }
 
-            // Espaço que compensa o teclado se necessário
+            // Garante espaço abaixo do teclado quando ele estiver aberto
             Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.ime))
         }
     }
 }
 
+/**
+ * Composable que desenha o "balão de mensagem" na tela, com cores diferentes para
+ * remetente e destinatário.
+ *
+ * @param message Objeto da mensagem contendo texto, remetente, etc.
+ * @param isCurrentUser Define se a mensagem foi enviada pelo usuário atual.
+ */
 @Composable
 fun MessageBubble(message: Message, isCurrentUser: Boolean) {
     Box(
