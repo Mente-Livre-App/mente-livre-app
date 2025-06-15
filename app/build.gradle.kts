@@ -95,6 +95,8 @@ dependencies {
     implementation(libs.androidx.navigation.testing.android)
 
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation(libs.androidx.foundation.android)
+    implementation(libs.androidx.foundation.android)
 
     testImplementation("io.mockk:mockk:1.13.3")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")

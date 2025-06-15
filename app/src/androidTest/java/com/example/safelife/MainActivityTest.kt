@@ -27,6 +27,8 @@ import com.example.safelife.viewModel.FeedViewModel
 import com.example.safelife.ui.agendamento.AgendamentoScreen
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.ui.Alignment
+import androidx.navigation.compose.rememberNavController
+
 import androidx.compose.ui.Modifier
 
 class MainActivity : ComponentActivity() {
@@ -144,7 +146,10 @@ fun AppNavigation() {
             val pacienteId = backStackEntry.arguments?.getString("pacienteId") ?: ""
             ChatProfissionalScreen(
                 profissionalId = profissionalId,
-                pacienteId = pacienteId
+                pacienteId = pacienteId,
+                navController = TODO(),
+                agendamentoId = TODO(),
+                userType = TODO()
             )
         }
         composable("feed") {

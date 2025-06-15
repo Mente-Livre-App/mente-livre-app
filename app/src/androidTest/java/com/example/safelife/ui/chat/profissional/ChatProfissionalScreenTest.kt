@@ -23,7 +23,10 @@ class ChatProfissionalScreenTest {
         composeTestRule.setContent {
             ChatProfissionalScreen(
                 profissionalId = "prof1",
-                pacienteId = "pac1"
+                pacienteId = "pac1",
+                navController = TODO(),
+                agendamentoId = TODO(),
+                userType = TODO()
             )
         }
 
@@ -37,7 +40,10 @@ class ChatProfissionalScreenTest {
         composeTestRule.setContent {
             ChatProfissionalScreen(
                 profissionalId = "prof1",
-                pacienteId = "pac1"
+                pacienteId = "pac1",
+                navController = TODO(),
+                agendamentoId = TODO(),
+                userType = TODO()
             )
         }
 
@@ -51,7 +57,10 @@ class ChatProfissionalScreenTest {
         composeTestRule.setContent {
             ChatProfissionalScreen(
                 profissionalId = "prof1",
-                pacienteId = "pac1"
+                pacienteId = "pac1",
+                navController = TODO(),
+                agendamentoId = TODO(),
+                userType = TODO()
             )
         }
 

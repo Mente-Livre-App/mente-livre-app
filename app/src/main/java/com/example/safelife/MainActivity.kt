@@ -4,9 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
@@ -105,7 +104,6 @@ fun AppRoot() {
                 PoliticaPrivacidadeScreen(onBack = { navController.popBackStack() })
             }
 
-
             composable("login") {
                 LoginScreen(
                     navigateToHome = {
@@ -199,7 +197,6 @@ fun AppRoot() {
                 PostDetailScreen(postId = postId)
             }
 
-            // ✅ Substituído para usar AgendamentoPacienteScreen
             composable("agendamento/{pacienteId}", arguments = listOf(
                 navArgument("pacienteId") { type = NavType.StringType }
             )) {
@@ -215,24 +212,27 @@ fun AppRoot() {
                 val coroutineScope = rememberCoroutineScope()
                 val profissionalUid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
-                AgendamentosConfirmadosScreen(onAbrirChat = { pacienteId, agendamentoId, userType ->
-                    coroutineScope.launch {
-                        try {
-                            val chatRepository = ChatRepository()
-                            chatRepository.getOrCreateChatId(
-                                user1 = profissionalUid,
-                                user2 = pacienteId,
-                                userType = userType,
-                                agendamentoId = agendamentoId
-                            )
-                            navController.navigate(
-                                "chat_profissional/$profissionalUid/$pacienteId/$agendamentoId/$userType"
-                            )
-                        } catch (e: Exception) {
-                            e.printStackTrace()
+                AgendamentosConfirmadosScreen(
+                    navController = navController,
+                    onAbrirChat = { pacienteId, agendamentoId, userType ->
+                        coroutineScope.launch {
+                            try {
+                                val chatRepository = ChatRepository()
+                                chatRepository.getOrCreateChatId(
+                                    user1 = profissionalUid,
+                                    user2 = pacienteId,
+                                    userType = userType,
+                                    agendamentoId = agendamentoId
+                                )
+                                navController.navigate(
+                                    "chat_profissional/$profissionalUid/$pacienteId/$agendamentoId/$userType"
+                                )
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
                         }
                     }
-                })
+                )
             }
 
             composable("agendamentoPaciente") {
@@ -240,15 +240,26 @@ fun AppRoot() {
             }
 
             composable(
-                route = "chat_profissional/{profissionalId}/{pacienteId}",
+                route = "chat_profissional/{profissionalId}/{pacienteId}/{agendamentoId}/{userType}",
                 arguments = listOf(
                     navArgument("profissionalId") { type = NavType.StringType },
-                    navArgument("pacienteId") { type = NavType.StringType }
+                    navArgument("pacienteId") { type = NavType.StringType },
+                    navArgument("agendamentoId") { type = NavType.StringType },
+                    navArgument("userType") { type = NavType.StringType }
                 )
             ) { backStackEntry ->
                 val profissionalId = backStackEntry.arguments?.getString("profissionalId") ?: ""
                 val pacienteId = backStackEntry.arguments?.getString("pacienteId") ?: ""
-                ChatProfissionalScreen(profissionalId = profissionalId, pacienteId = pacienteId)
+                val agendamentoId = backStackEntry.arguments?.getString("agendamentoId") ?: ""
+                val userType = backStackEntry.arguments?.getString("userType") ?: ""
+
+                ChatProfissionalScreen(
+                    navController = navController,
+                    profissionalId = profissionalId,
+                    pacienteId = pacienteId,
+                    agendamentoId = agendamentoId,
+                    userType = userType
+                )
             }
         }
     }

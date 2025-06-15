@@ -14,6 +14,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.safelife.viewModel.chat.profissional.ListaPacientesViewModel
 import com.example.safelife.viewModel.chat.profissional.ListaPacientesViewModelFactory
+
 /**
  * Tela que exibe a lista de pacientes que iniciaram conversa com o profissional.
  *
@@ -28,21 +29,17 @@ fun ListaPacientesScreen(
     profissionalId: String,
     viewModelOverride: ListaPacientesViewModel? = null
 ) {
-    // Usa o ViewModel padrão ou o sobrescrito (para testes)
     val viewModel = viewModelOverride ?: viewModel(
         factory = ListaPacientesViewModelFactory(profissionalId)
     )
 
-    // Coleta os estados da lista de pacientes e carregamento
     val pacientes by viewModel.pacientes.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    // Carrega os pacientes que já possuem chat com o profissional
     LaunchedEffect(Unit) {
         viewModel.buscarPacientesComConversa()
     }
 
-    // Estrutura com barra superior e conteúdo
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Pacientes em conversa") })
@@ -54,12 +51,10 @@ fun ListaPacientesScreen(
                 .fillMaxSize()
         ) {
             when {
-                // Mostra indicador de carregamento
                 isLoading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
 
-                // Caso não haja conversas iniciadas
                 pacientes.isEmpty() -> {
                     Text(
                         text = "Nenhum paciente iniciou conversa ainda.",
@@ -67,7 +62,6 @@ fun ListaPacientesScreen(
                     )
                 }
 
-                // Lista os pacientes que já iniciaram conversa
                 else -> {
                     LazyColumn(
                         modifier = Modifier
@@ -80,8 +74,12 @@ fun ListaPacientesScreen(
                                     .fillMaxWidth()
                                     .padding(vertical = 8.dp)
                                     .clickable {
-                                        // Ao clicar, navega para a tela de chat profissional
-                                        navController.navigate("chat_profissional/$profissionalId/${paciente.uid}")
+                                        val agendamentoId = "sem_agendamento" // Ajuste conforme sua lógica futura
+                                        val userType = "profissional"
+
+                                        navController.navigate(
+                                            "chat_profissional/$profissionalId/${paciente.uid}/$agendamentoId/$userType"
+                                        )
                                     },
                                 elevation = CardDefaults.cardElevation(4.dp)
                             ) {
