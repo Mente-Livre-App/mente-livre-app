@@ -155,9 +155,11 @@ fun AppRoot() {
                 )
             }
 
+            // ✅ CORREÇÃO APLICADA AQUI
             composable("lista_profissionais/{userId}") { backStackEntry ->
                 val userId = backStackEntry.arguments?.getString("userId") ?: ""
                 ListaProfissionaisScreen(
+                    navController = navController, // ✅ AGORA FUNCIONA
                     currentUserId = userId,
                     navigateToChat = { currentUserId, recipientId ->
                         navController.navigate("chat/$currentUserId/$recipientId")
@@ -168,8 +170,13 @@ fun AppRoot() {
             composable("chat/{currentUserId}/{recipientId}") { backStackEntry ->
                 val currentUserId = backStackEntry.arguments?.getString("currentUserId") ?: ""
                 val recipientId = backStackEntry.arguments?.getString("recipientId") ?: ""
-                ChatScreen(currentUserId = currentUserId, otherUserId = recipientId)
+                ChatScreen(
+                    navController = navController, // ✅ Agora funciona
+                    currentUserId = currentUserId,
+                    otherUserId = recipientId
+                )
             }
+
 
             composable("lista_pacientes/{profissionalId}") { backStackEntry ->
                 val profissionalId = backStackEntry.arguments?.getString("profissionalId") ?: ""

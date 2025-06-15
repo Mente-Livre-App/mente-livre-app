@@ -1,139 +1,174 @@
 package com.example.safelife.ui.chat.paciente
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.safelife.model.Message
 import com.example.safelife.viewModel.chat.paciente.ChatPacienteViewModel
 import com.example.safelife.viewModel.chat.paciente.ChatPacienteViewModelFactory
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.layout.imePadding
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.statusBarsPadding
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
-    currentUserId: String,  // ID do usuário atual (quem está logado)
-    otherUserId: String,    // ID do outro usuário (destinatário da conversa)
+    navController: NavController? = null,
+    currentUserId: String,
+    otherUserId: String,
     viewModel: ChatPacienteViewModel = viewModel(factory = ChatPacienteViewModelFactory(currentUserId, otherUserId))
 ) {
-    val messages = viewModel.messages                     // Lista de mensagens observável
-    var messageText by remember { mutableStateOf("") }    // Texto atual digitado pelo usuário
-
-    val listState = rememberLazyListState()               // Estado para controlar rolagem da lista
+    val mensagens = viewModel.messages
+    var textoMensagem by remember { mutableStateOf(TextFieldValue("")) }
+    val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
-    /**
-     * Quando novas mensagens forem recebidas, rola automaticamente para a última mensagem.
-     */
-    LaunchedEffect(messages) {
-        snapshotFlow { messages.size }.collect {
-            coroutineScope.launch {
-                if (messages.isNotEmpty()) {
-                    listState.animateScrollToItem(0)
-                }
+    LaunchedEffect(mensagens.size) {
+        coroutineScope.launch {
+            if (mensagens.isNotEmpty()) {
+                listState.animateScrollToItem(0)
             }
         }
     }
 
-    // Ordena as mensagens por timestamp de forma decrescente (mensagem mais nova no topo)
-    val mensagensOrdenadas = messages
+    val mensagensOrdenadas = mensagens
         .filter { it.timestamp != null }
         .sortedBy { it.timestamp }
         .reversed()
 
-    /**
-     * Layout principal do chat, com rolagem e ajuste ao teclado virtual.
-     */
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .imePadding() // Ajusta o conteúdo para não ficar escondido atrás do teclado
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
 
-            // Lista de mensagens com rolagem reversa (de baixo pra cima)
-            LazyColumn(
-                state = listState,
+        // ✅ Conteúdo principal com padding no topo
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp)
+                .padding(top = 72.dp) // espaço reservado para o botão
+        ) {
+            Text(
+                text = "Bem-vindo ao",
+                color = Color(0xFF9C27B0),
+                style = MaterialTheme.typography.titleLarge
+            )
+            Text(
+                text = "Suporte à Saúde Mental",
+                color = Color(0xFF9C27B0),
+                style = MaterialTheme.typography.titleLarge
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Card(
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                reverseLayout = true
+                    .weight(1f),
+                shape = RoundedCornerShape(24.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                border = BorderStroke(1.dp, Color.LightGray),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
             ) {
-                items(mensagensOrdenadas) { message ->
-                    MessageBubble(message, isCurrentUser = message.senderId == currentUserId)
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    reverseLayout = true
+                ) {
+                    items(mensagensOrdenadas) { mensagem ->
+                        val isPaciente = mensagem.senderId == currentUserId
+                        val background = if (isPaciente) Color(0xFF3F51B5) else Color(0xFF8E24AA)
+                        val alignment = if (isPaciente) Arrangement.End else Arrangement.Start
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = alignment
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = background
+                            ) {
+                                Text(
+                                    text = mensagem.text,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Campo de texto e botão de enviar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp),
+                    .padding(bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextField(
-                    value = messageText,
-                    onValueChange = { messageText = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("Digite uma mensagem...") }
+                    value = textoMensagem,
+                    onValueChange = { textoMensagem = it },
+                    placeholder = { Text("Digite sua mensagem...") },
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(Color(0xFFF0F0F0), shape = RoundedCornerShape(12.dp)),
+                    colors = TextFieldDefaults.textFieldColors(
+                        containerColor = Color(0xFFF0F0F0),
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    )
                 )
 
-                IconButton(
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Button(
                     onClick = {
-                        viewModel.sendMessage(messageText)
-                        messageText = ""
+                        if (textoMensagem.text.isNotBlank()) {
+                            viewModel.sendMessage(textoMensagem.text)
+                            textoMensagem = TextFieldValue("")
+                        }
                     },
-                    enabled = messageText.isNotBlank()
+                    shape = RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F51B5))
                 ) {
-                    Icon(Icons.Default.Send, contentDescription = "Enviar")
+                    Text("Enviar", color = Color.White)
                 }
             }
-
-            // Garante espaço abaixo do teclado quando ele estiver aberto
-            Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.ime))
         }
-    }
-}
 
-/**
- * Composable que desenha o "balão de mensagem" na tela, com cores diferentes para
- * remetente e destinatário.
- *
- * @param message Objeto da mensagem contendo texto, remetente, etc.
- * @param isCurrentUser Define se a mensagem foi enviada pelo usuário atual.
- */
-@Composable
-fun MessageBubble(message: Message, isCurrentUser: Boolean) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        contentAlignment = if (isCurrentUser) Alignment.CenterEnd else Alignment.CenterStart
-    ) {
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = if (isCurrentUser) Color(0xFF1976D2) else Color(0xFFE0E0E0),
-                contentColor = if (isCurrentUser) Color.White else Color.Black
-            )
+        // ✅ Botão voltar visível no topo esquerdo
+        IconButton(
+            onClick = { navController?.popBackStack() },
+            modifier = Modifier
+                .statusBarsPadding()
+                .padding(start = 8.dp)
+                .size(48.dp)
+                .zIndex(2f)
         ) {
-            Text(
-                text = message.text,
-                modifier = Modifier.padding(12.dp)
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Voltar",
+                tint = Color(0xFF9C27B0),
+                modifier = Modifier.size(24.dp)
             )
         }
     }
