@@ -1,76 +1,107 @@
-# 🧠 SafeLife
+# 🧠 Mente Livre – Plataforma de Apoio Psicológico
 
-**SafeLife** é um aplicativo de saúde mental que conecta pacientes e profissionais, promovendo bem-estar através de consultas, fóruns, bate-papo e agendamentos intuitivos.
+## 🔍 Visão Geral
 
----
-
-## 📱 Funcionalidades
-
-- 👤 Cadastro e login de pacientes e profissionais
-- 📅 Agendamento de consultas com profissionais
-- 💬 Chat em tempo real entre paciente e terapeuta
-- 📰 Feed de postagens e comentários (estilo fórum)
-- 🔐 Integração com Firebase Authentication & Firestore
-- 🎨 Interface moderna com Jetpack Compose
-- 📆 Agenda profissional com horários personalizáveis
+O **Mente Livre** é um aplicativo Android desenvolvido em Kotlin com Jetpack Compose. Ele conecta pessoas em situação de vulnerabilidade emocional a profissionais e voluntários da saúde mental. A plataforma oferece chat anônimo, agendamento de consultas, feed de apoio emocional e gestão de disponibilidade.
 
 ---
 
-## 🧰 Tecnologias utilizadas
+## 👥 Público-Alvo
 
-- **Kotlin** com **Jetpack Compose**
-- **Firebase** (Auth, Firestore)
-- **MVVM Architecture**
-- **Coroutines + StateFlow**
-- **Android Studio (KTS + Gradle)**
+- Pessoas em vulnerabilidade social e emocional;
+- Adolescentes e jovens em crise emocional;
+- Profissionais com burnout;
+- Familiares e cuidadores de pessoas com transtornos mentais;
+- Sobreviventes de violência física e psicológica;
+- Moradores de regiões com pouco acesso à saúde mental.
 
 ---
 
-## 🏗️ Estrutura do Projeto
+## 🛠 Tecnologias Utilizadas
+
+- **Kotlin** + **Jetpack Compose (Material 3)**
+- **Arquitetura MVVM**
+- **Firebase Auth** e **Cloud Firestore**
+- **Kotlin Coroutines** + **StateFlow / Flow**
+- **Navigation Compose**
+
+---
+
+## 🧩 Estrutura do Projeto
 
 ```
-app/
-├── ui/                  # Telas Compose
-├── viewModel/           # ViewModels MVVM
-├── model/               # Modelos de dados
-├── repository/          # Camada de dados (Firestore)
-└── MainActivity.kt      # Navegação e entrada
+com.example.safelife
+├── ui                  → Telas em Compose
+├── viewModel           → Estados e lógicas de interface
+├── repository          → Integrações com Firebase
+├── model               → Entidades como Post, Message, Agendamento
+├── preferences         → Armazenamento local (LGPD)
 ```
 
 ---
 
-## 🚀 Como rodar o projeto
+## 🚀 Funcionalidades Principais
 
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/Mente-Livre-App/mente-livre-app.git
-   ```
+### ✅ Autenticação
+- Login, cadastro e redefinição de senha
+- Identificação de tipo de conta (paciente ou profissional)
 
-2. Abra no Android Studio.
+### 📆 Agendamento de Consultas
+- Marcação de consultas com profissionais disponíveis
+- Status de confirmação (pendente / confirmado)
 
-3. Conecte com seu projeto Firebase e configure o `google-services.json`.
+### 📋 Gestão de Disponibilidade
+- Profissionais configuram seus horários por dia da semana
+- Armazenamento em Firestore na coleção `disponibilidade`
 
-4. Sincronize o Gradle e execute o app.
+### 💬 Chat em Tempo Real
+- Chat individual paciente ↔ profissional com Firestore + Flow
+- Suporte a anonimato e múltiplos chats simultâneos
 
----
+### 🧵 Feed Social
+- Postagens públicas com comentários e curtidas
+- Atualizações em tempo real por snapshot listeners
 
-## 🔒 Conformidade com a LGPD
-
-O app inclui:
-- Consentimento explícito do usuário
-- Política de privacidade clara
-- Opção de exclusão de dados
-
----
-
-## 📢 Contribuições
-
-Contribuições são bem-vindas! Crie uma issue ou envie um pull request. 🙌
+### 🕵️ Atendimento Anônimo
+- Canal seguro onde usuários podem receber escuta e orientação sem se identificar
 
 ---
 
-## 📄 Licença
+## 🔄 Fluxo de Navegação
 
-Este projeto está licenciado sob a **MIT License**. Consulte o arquivo `LICENSE` para mais detalhes.
+- `login` → `signup` → `home`
+- `home` → `lista_profissionais` → `chat`
+- `home` → `lista_pacientes` → `chat_profissional`
+- `home` → `agendamento` ou `agendaProfissional`
+- `home` → `feed` → `nova_postagem` → `post_detail`
 
 ---
+
+## 🔗 Integração com Firebase
+
+| Coleção         | Finalidade                                 |
+|-----------------|---------------------------------------------|
+| `usuarios`      | Dados de perfil e tipo de conta             |
+| `agendamentos`  | Controle de consultas e status              |
+| `disponibilidade` | Horários disponíveis de profissionais     |
+| `posts`         | Publicações no feed                         |
+| `comments`      | Comentários por post                        |
+| `chats`         | Identificação de conversas                  |
+| `messages`      | Mensagens de cada chat                      |
+
+---
+
+## 🧪 Processo de Desenvolvimento
+
+1. Planejamento e levantamento de requisitos
+2. Modelagem de entidades: usuário, agendamento, post, mensagem
+3. Implementação modular (auth, agendamento, chat, feed)
+4. Uso do GitHub com branches temáticas
+5. Testes manuais e em emulador físico
+6. Boas práticas com ViewModel, separação de responsabilidades e corrotinas
+
+---
+
+## 👨‍💻 Equipe
+
+Projeto acadêmico desenvolvido por equipe multidisciplinar com suporte de psicóloga orientadora para validação funcional e ética.
