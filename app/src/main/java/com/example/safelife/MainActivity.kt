@@ -178,9 +178,15 @@ fun AppRoot() {
 
             composable("feed") {
                 val feedViewModel: FeedViewModel = viewModel()
-                FeedScreen(viewModel = feedViewModel, navigateToNovaPostagem = {
-                    navController.navigate("nova_postagem")
-                })
+                FeedScreen(
+                    viewModel = feedViewModel,
+                    navigateToNovaPostagem = {
+                        navController.navigate("nova_postagem")
+                    },
+                    navigateBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
 
             composable("nova_postagem") {

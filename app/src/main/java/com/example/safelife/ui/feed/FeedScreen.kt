@@ -5,18 +5,19 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import com.example.safelife.model.Comment
 import androidx.compose.material.icons.filled.ChatBubble
-
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.example.safelife.model.Post
@@ -28,13 +29,12 @@ import kotlinx.coroutines.launch
 @Composable
 fun FeedScreen(
     viewModel: FeedViewModel,
-    navigateToNovaPostagem: () -> Unit
+    navigateToNovaPostagem: () -> Unit,
+    navigateBack: () -> Unit
 ) {
     val posts by viewModel.posts.collectAsState()
     val userType by viewModel.userType.collectAsState()
     val context = LocalContext.current
-
-    // Buscar tipo do usuário ao abrir a tela
     val currentUser = FirebaseAuth.getInstance().currentUser
 
     LaunchedEffect(currentUser?.uid) {
@@ -47,11 +47,21 @@ fun FeedScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Feed de Apoio") }
+                title = {
+                    Text(
+                        text = "Fórum",
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navigateBack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                    }
+                }
             )
         },
         floatingActionButton = {
-            if (userType.isNotBlank() && userType.equals("profissional", ignoreCase = true)) {
+            if (userType.equals("profissional", ignoreCase = true)) {
                 FloatingActionButton(onClick = navigateToNovaPostagem) {
                     Icon(imageVector = Icons.Default.Add, contentDescription = "Nova Postagem")
                 }
@@ -77,16 +87,14 @@ fun FeedScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(posts.reversed()) { post ->
-                        PostItem(
-                            post = post,
-                            viewModel = viewModel
-                        )
+                        PostItem(post = post, viewModel = viewModel)
                     }
                 }
             }
         }
     }
 }
+
 @Composable
 fun PostItem(
     post: Post,
@@ -96,53 +104,56 @@ fun PostItem(
     val currentUserId = currentUser?.uid.orEmpty()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-
-    // ✅ Define se o post já foi curtido por esse usuário
     val isLiked = post.likedBy.contains(currentUserId)
-
     val likeColor by animateColorAsState(
-        targetValue = if (isLiked) Color(0xFF00C8FF) else MaterialTheme.colorScheme.onSurfaceVariant
+        targetValue = if (isLiked) Color(0xFF00C8FF) else Color.Gray
     )
     val highlightColor = Color(0xFF00C8FF)
 
     var novoComentario by remember { mutableStateOf(TextFieldValue("")) }
     val comentarios by viewModel.getCommentsForPost(post.id).collectAsState(initial = emptyList())
 
-
     LaunchedEffect(post.id) {
         viewModel.carregarComentarios(post.id)
     }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(4.dp)
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = post.authorName,
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = Color.Red,
+                    fontWeight = FontWeight.Bold
+                )
             )
-            Spacer(modifier = Modifier.height(8.dp))
+
+            Spacer(modifier = Modifier.height(6.dp))
+
             Text(
                 text = post.content,
                 style = MaterialTheme.typography.bodyLarge
             )
+
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                IconButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            viewModel.toggleLike(
-                                postId = post.id,
-                                userId = currentUserId,
-                                isCurrentlyLiked = isLiked
-                            )
-                        }
+                IconButton(onClick = {
+                    coroutineScope.launch {
+                        viewModel.toggleLike(
+                            postId = post.id,
+                            userId = currentUserId,
+                            isCurrentlyLiked = isLiked
+                        )
                     }
-                ) {
+                }) {
                     Icon(
                         imageVector = Icons.Default.Favorite,
                         contentDescription = "Curtir",
@@ -156,15 +167,14 @@ fun PostItem(
                     style = MaterialTheme.typography.bodyMedium
                 )
 
-                Spacer(modifier = Modifier.width(16.dp))
-
-                IconButton(onClick = { /* Ação de exibir comentários se necessário */ }) {
+                IconButton(onClick = { /* ação de comentários */ }) {
                     Icon(
                         imageVector = Icons.Default.ChatBubble,
                         contentDescription = "Comentários",
                         tint = highlightColor
                     )
                 }
+
                 Text(
                     text = "${comentarios.size} comentários",
                     color = highlightColor,
@@ -175,21 +185,27 @@ fun PostItem(
             Spacer(modifier = Modifier.height(8.dp))
 
             comentarios.forEach { comment ->
-                Text(
-                    text = "${comment.authorName}: ${comment.text}",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(vertical = 2.dp)
-                )
+                Column(modifier = Modifier.padding(vertical = 2.dp)) {
+                    Text(
+                        text = comment.authorName,
+                        style = MaterialTheme.typography.labelMedium.copy(color = Color(0xFF4A148C))
+                    )
+                    Text(
+                        text = comment.text,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = novoComentario,
                 onValueChange = { novoComentario = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Adicionar comentário...") },
-                singleLine = true
+                placeholder = { Text("Adicionar comentário") },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -212,9 +228,11 @@ fun PostItem(
                         }
                     }
                 },
-                modifier = Modifier.align(Alignment.End)
+                modifier = Modifier.align(Alignment.End),
+                shape = RoundedCornerShape(24.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00C8FF))
             ) {
-                Text("Enviar")
+                Text("Enviar", color = Color.White)
             }
         }
     }
